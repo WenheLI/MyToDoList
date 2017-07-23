@@ -21,4 +21,7 @@ from django.conf import settings
 
 urlpatterns = [
     url(r'^$', view.hello),
+    url(r'^login', view.login),
+    url(r'^add', view.add),
+    url(r'^delete', view.delete)
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -1,4 +1,15 @@
-function addSticker() {
+let thisSticker = null;
+let username = '';
+
+function jump(content) {
+    //console.log(typeof content);
+    $('#refreshModal').modal('toggle');
+    $('#note-change').val(content.innerText);
+    thisSticker = content;
+}
+
+function addSticker(text) {
+    console.log(username);
     let board = $('#show-board');
     let stick = document.createElement('li');
     let detail = document.createElement('span');
@@ -12,21 +23,46 @@ function addSticker() {
     mark.style.left = "7em";
     mark.style.float = "bottom";
 
+    if (text) {
+        detail.innerText = text;
+    } else {
+        $('#addModal').modal('toggle');
+        let textArea = $('#note-input');
+        let text = textArea.val();
+        detail.innerText = text;
+        textArea.val('');
 
-    let textArea = $('#note-input');
-    let text = textArea.val();
-    detail.innerText = text;
+
+        let send = {"name": username['name'],
+                    "message": text};
+
+        $.ajax({
+            url: "/add",
+            type: "POST",
+            data: send,
+            success: (dataRec) => {
+                dataRec = JSON.parse(dataRec);
+                console.log(dataRec.message);
+                if (dataRec["status"] === 1) {
+                    console.log('store!!')
+                }
+
+            }
+        });
+    }
+
+
 
     stick.append(detail);
     stick.append(mark);
     board.append(stick);
-    textArea.val('');
 
 
-    $('#addModal').modal('toggle');
+
+
 
 }
-let thisSticker = null;
+
 function refreshSticker() {
     //console.log(thisSticker);
     if (thisSticker) {
@@ -43,28 +79,40 @@ function refreshSticker() {
 function deleteSticker() {
     //console.log(thisSticker);
     if (thisSticker) {
-        var parent = document.getElementById('show-board');
+        let parent = document.getElementById('show-board');
         parent.removeChild(thisSticker);
-        thisSticker = null;
+
         $('#refreshModal').modal('toggle');
+        let send = {"name": username['name'],
+                    "message": thisSticker.firstChild.innerText};
+        thisSticker = null;
+        $.ajax({
+            url: "/delete",
+            type: "POST",
+            data: send,
+            success: (dataRec) => {
+                dataRec = JSON.parse(dataRec);
+                console.log(dataRec.message);
+                if (dataRec["status"] === 1) {
+                    console.log('delete!!')
+                }
+
+            }
+        });
+
+
     }
 }
 
 function markSticker() {
     if (thisSticker) {
-        var icon =thisSticker.lastChild;
+        let icon =thisSticker.lastChild;
         icon.className = 'glyphicon glyphicon-ok';
         thisSticker = null;
         $('#refreshModal').modal('toggle');
     }
 }
 
-function jump(content) {
-    //console.log(typeof content);
-    $('#refreshModal').modal('toggle');
-    $('#note-change').val(content.innerText);
-    thisSticker = content;
-}
 
 function listAll() {
     let all = $('.sticky');
@@ -96,6 +144,35 @@ function listAll() {
                uls[i].innerHTML = '';
                break;
            }
+        }
+    })
+}
+
+
+function login() {
+    username = $('#username').val();
+    // var socket = new WebSocket("ws://" + window.location.host + "/login");
+    // socket.onopen = () => {
+    //     console.log('loading');
+    //     socket.send(username);
+    // };
+    // socket.onmessage = (e) => {
+    //     console.log(e.data)
+    // }
+    username = {'name': username};
+    $('#loginModal').modal('toggle');
+    $.ajax({
+        url: "/login",
+        type: "POST",
+        data: username,
+        success: (data) => {
+            data = JSON.parse(data);
+            if (data["status"] === 1) {
+                for(let i = 0; i < data.message.length; i++){
+                    addSticker(data.message[i]);
+                }
+            }
+
         }
     })
 }

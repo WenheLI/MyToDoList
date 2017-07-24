@@ -12,7 +12,9 @@
     <meta name="author" content="">
 
     <title>MY TODO List</title>
-    <script src="http://cdn.static.runoob.com/libs/jquery/1.10.2/jquery.min.js"></script>
+
+
+    <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
 
     <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
     <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css"
@@ -38,15 +40,6 @@
 </head>
 
 <body>
-    <script>
-    $(function(){
-        $('#loginModal').modal({
-            show:true,
-            backdrop:'drop',
-            keyboard:false
-        })
-    });
-    </script>
     <nav class="navbar navbar-default" role="navigation">
         <div class="container-fluid">
             <div class="navbar-header">
@@ -76,6 +69,16 @@
             <button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#addModal">TODO</button>
             <button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#listModal"
                     onclick="listAll()">LIST ALL</button>
+                 <div class="btn-group btn-group-lg">
+                    <button type="button" class="btn btn-primary btn-lg" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Sort
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a onclick="sort('priority')">Sort By Priority</a></li>
+                        <li><a onclick="sort('date')">Sort By Expire Date</a></li>
+                    </ul>
+                </div>
             </div>
         </div>
 
@@ -97,10 +100,20 @@
                     <form role="form">
                         <div class="form-group">
 
-                            <textarea id="note-input" class="form-control" rows="10" cols="70"></textarea>
+                            <textarea id="note-input" class="form-control" rows="10" cols="60"></textarea>
                         </div>
                     </form>
                 <div class="modal-footer">
+                    <div class="col-xs-2">
+                        <select class="form-control" id="priority-setup">
+			                <option>1</option>
+			                <option>2</option>
+			                <option>3</option>
+		                </select>
+                    </div>
+                    <div class="col-xs-2">
+                        <input id="time-add" type="date"/>
+                    </div>
                     <button type="button" class="btn btn-default" data-dismiss="modal">cancel</button>
                     <button type="button" class="btn btn-primary" onclick="addSticker()">confirm</button>
                 </div>
@@ -126,6 +139,16 @@
                         </div>
                     </form>
                 <div class="modal-footer">
+                    <div class="col-xs-2">
+                        <select class="form-control" id="priority-refresh">
+			                <option>1</option>
+			                <option>2</option>
+			                <option>3</option>
+		                </select>
+                    </div>
+                    <div class="col-xs-2">
+                        <input id="time-refresh" type="date"/>
+                    </div>
                     <button type="button" class="btn btn-default" data-dismiss="modal">cancel</button>
                     <button type="button" class="btn btn-danger" onclick="deleteSticker()">delete</button>
                     <button type="button" class="btn btn-success" onclick="markSticker()">done</button>

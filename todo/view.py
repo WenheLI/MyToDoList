@@ -3,6 +3,8 @@ from django.shortcuts import render
 # from dwebsocket import require_websocket
 import json
 import psycopg2
+import time
+import datetime
 
 
 def hello(request):
@@ -20,21 +22,38 @@ def login(request):
         conn = connection()
         cur = conn.cursor()
         name = request.POST.get('name')
+        dates = []
         status = 1
-        try:
-            cur.execute("SELECT name, message FROM todoDB WHERE NAME LIKE '%s'" % name)
+
+        cur.execute('''SELECT   tablename   FROM   pg_tables   
+                        WHERE   tablename   NOT   LIKE   'pg%'   
+                        AND tablename NOT LIKE 'sql_%' 
+                        ORDER   BY   tablename;''')
+        res = cur.fetchall()
+        if ('%s' % name,) in res:
+            cur.execute("SELECT message, isFinish FROM %s ORDER BY date ASC" % name)
             rows = cur.fetchall()
+            print rows
             data = json.dumps({
                 "status": status,
-                "message": rows[0][1].split(',')
+                "detail": rows
             })
-        except:
-            cur.execute("INSERT INTO todoDB (name, message) VALUES('%s', '')" % name)
+        else:
+            cur.execute('''CREATE TABLE %s
+            (
+                message TEXT NOT NULL,
+                isFinish smallint NOT NULL,
+                priority SMALLINT NOT NULL,
+                date DATE NOT NULL);
+            ''' % name)
             conn.commit()
             data = json.dumps({
                 "status": status,
                 "message": ''
             })
+
+        cur.execute("SELECT * FROM %s ORDER BY DATE ASC" % name)
+        print cur.fetchall()
 
         conn.close()
         return HttpResponse(data)
@@ -46,21 +65,21 @@ def add(request):
         conn = connection()
         cur = conn.cursor()
 
+        isFinish = int(request.POST.get('isFinish'))
+        priority = int(request.POST.get('priority'))
+        date = request.POST.get('date')
+        print date
         name = request.POST.get('name')
         message = request.POST.get('message')
         status = 1
-        cur.execute("SELECT name, message FROM todoDB WHERE NAME LIKE '%s'" % name)
-        rows = cur.fetchall()
-        if rows[0][1]:
-            message = rows[0][1] + ',' + message
-        cur.execute("UPDATE todoDB set message = '%s' WHERE name = '%s'" % (message, name))
+
+        cur.execute("INSERT INTO %s (message, isFinish, priority, date) VALUES('%s', %d, %d, '%s')"
+                    % (name, message, isFinish, priority, date))
 
         data = json.dumps({
             status: status
         })
         conn.commit()
-        cur.execute("SELECT name, message FROM todoDB WHERE NAME LIKE '%s'" % name)
-        rows = cur.fetchall()
 
         conn.close()
         return HttpResponse(data)
@@ -75,29 +94,110 @@ def delete(request):
         name = request.POST.get('name')
         message = request.POST.get('message')
         status = 1
-        cur.execute("SELECT name, message FROM todoDB WHERE NAME LIKE '%s'" % name)
-        rows = cur.fetchall()
-        msgs = rows[0][1].split(',')
-        msgs.remove(message)
-        com = ','
-        msgs = com.join(msgs)
-        cur.execute("UPDATE todoDB set message = '%s' WHERE name = '%s'" % (msgs, name))
+
+        cur.execute("DELETE FROM %s WHERE message LIKE '%s' " % (name, message))
         data = json.dumps({
             status: status
-            })
+        })
         conn.commit()
 
         conn.close()
         return HttpResponse(data)
 
 
-if __name__ == "__main__":
-    conn = psycopg2.connect(database="ToDoList", user="eric", password="123", host="127.0.0.1", port="5432")
-    print "connect successfully"
-    cur = conn.cursor()
-    conn.commit()
-    cur.execute("SELECT NAME, MESSAGE from todoDB WHERE name LIKE 'hahaha'")
-    rows = cur.fetchall()
-    for row in rows:
-        print "ID: ", row[0]
-        print "message", row[1]
+def mark(request):
+    if request.method == "POST":
+        print 'start mark'
+        conn = connection()
+        cur = conn.cursor()
+
+        name = request.POST.get('name')
+        message = request.POST.get('message')
+        status = 1
+        cur.execute("UPDATE %s SET isFinish = 1 WHERE message = '%s'" % (name, message))
+        data = json.dumps({
+            status: status
+        })
+        conn.commit()
+
+        conn.close()
+        return HttpResponse(data)
+
+
+def refresh(request):
+    if request.method == "POST":
+        print 'start mark'
+        conn = connection()
+        cur = conn.cursor()
+
+        name = request.POST.get('name')
+        cMessage = request.POST.get('cMessage')
+        pMessage = request.POST.get('pMessage')
+        priority = int(request.POST.get('priority'))
+        status = 1
+
+        data = json.dumps({
+            "status": status
+        })
+
+        cur.execute("UPDATE %s SET message = '%s', priority = %d WHERE message = '%s'"
+                    % (name, cMessage, priority, pMessage))
+
+        conn.commit()
+
+        conn.close()
+        return HttpResponse(data)
+
+
+def jump(request):
+    if request.method == "POST":
+        print 'start jump'
+        conn = connection()
+        cur = conn.cursor()
+
+        name = request.POST.get('name')
+        message = request.POST.get('message')
+        status = 1
+        print request.POST
+        cur.execute("SELECT priority, date FROM %s WHERE message LIKE '%s'" % (name, message))
+        rows = cur.fetchall()
+        conn.commit()
+        print rows
+        for i in range(len(rows)):
+            rows[i] = list(rows[i])
+            rows[i][-1] = rows[i][-1].strftime('%Y-%m-%d')
+
+        data = json.dumps({
+            "status": status,
+            "detail": rows
+        })
+
+        conn.close()
+        return HttpResponse(data)
+
+
+def sort(request):
+    if request.method == "POST":
+        print 'start sort'
+        conn = connection()
+        cur = conn.cursor()
+
+        name = request.POST.get('name')
+        mode = request.POST.get('mode')
+        status = 1
+
+        cur.execute("SELECT * FROM %s ORDER BY %s ASC" % (name, mode))
+        rows = cur.fetchall()
+        conn.commit()
+        for i in range(len(rows)):
+            rows[i] = list(rows[i])
+            rows[i][-1] = rows[i][-1].strftime('%Y-%m-%d')
+
+        data = json.dumps({
+            "status": status,
+            "detail": rows
+        })
+
+        conn.close()
+        return HttpResponse(data)
+

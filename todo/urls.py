@@ -23,5 +23,9 @@ urlpatterns = [
     url(r'^$', view.hello),
     url(r'^login', view.login),
     url(r'^add', view.add),
-    url(r'^delete', view.delete)
+    url(r'^delete', view.delete),
+    url(r'^mark', view.mark),
+    url(r'^refresh', view.refresh),
+    url(r'jump', view.jump),
+    url(r'^sort', view.sort)
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
